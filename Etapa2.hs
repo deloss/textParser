@@ -15,7 +15,19 @@ leeMOE m e [x]
    | e x       = Nothing
    | m x       = Just ([ ],  Just x, [])
    | otherwise = Just ([x], Nothing, [])
-leeMOE m e (x:y:xs) = undefined
+leeMOE m e (x:y:xs) 
+  | m x = if e $ last (y:xs) then Nothing
+          else Just ([], Just x, [y:xs])
+  | e x && m y = do
+                    (principio, marca, resto) <- leeMOE m e xs
+                    case marca of
+                    Nothing -> return (Just ([x:y:principio], Nothing, []))  
+                    Just z -> return (Just ([x:y:principio], marca, resto))
+  | otherwise = do
+                  (principio, marca, resto) <- leeMOE m e (y:xs)
+                  case marca of
+                  Nothing -> return (Just ([x:principio], Nothing, []))
+                  Just z -> return (Just ([x:principio], marca, resto)) 
 
 --- El programa leeMXE lee una lista hasta encontrar una marca que no
 --- esté protegida por un ESCAPE. Si no encuentra
@@ -23,7 +35,22 @@ leeMOE m e (x:y:xs) = undefined
 --- devuelve Nothing.
 
 leeMXE :: (a -> Bool) -> (a -> Bool) -> [a] -> Maybe ([a], a, [a])
-leeMXE m e xs = undefined
+leeMXE m e [] = Nothing
+leeMXE m e [x]
+  | e x = Nothing
+  | m x = Just ([], x, [])
+  | otherwise = Nothing 
+leeMXE m e (x:y:xs) 
+  | m x = 
+            if e $ last (y:xs) then Nothing
+            else Just ([], x, [y:xs])
+  | e x && m y = do
+                    (principio, marca, resto) <- leeMXE m e xs
+                    return (Just ([x:y:principio], marca, resto))
+  | otherwise = do
+                  (principio, marca, resto) <- leeMXE m e (y:xs)
+                  return (Just ([x:principio], marca, resto)) 
+
 
 --- El programa readFV recibe un String, y consume del mismo
 --- una palabra que representa un valor booleano de acuerdo
