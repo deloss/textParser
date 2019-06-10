@@ -1,0 +1,38 @@
+// ejemplo de verdadero falso
+:: fv .1:: Grant muri´o en 1886 { FALSO }
+// fin de pregunta
+ 
+// ejemplo de multiple opcion
+:: mo .1:: {= Grant ~ el gato de Grant ~ Tumbledore } est´a sepultado en la
+tumba de Grant .
+// fin de pregunta
+ 
+// ejemplo de multiple opcion
+:: mo .2:: Indique qui´en est´a sepultado en la tumba de Grant .{
+= Grant
+~ el gato de Grant
+~ Tumbledore
+}
+// fin de pregunta
+ 
+// ejemplo de desarrollo
+:: desarrollo .1:: Cuente acerca de las becas que recibi´o Grant como estudiante . {}
+// fin de pregunta
+ 
+// ejemplo de respuesta corta
+:: corta .1:: ¿Qui´en est´a sepultado en la tumba de Grant ?{= Grant = Ulysses
+S . Grant = Ulysses Grant }
+// fin de pregunta
+ 
+// ejemplo de respuesta corta
+:: corta .2:: {= Grant = Ulysses S . Grant = Ulysses Grant } est´a sepultado en
+la tumba de Grant .
+// fin de pregunta
+ 
+//
+:: ejemplo del enunciado :: Complete el programa ‘ foo x = " Si un quilo de papas
+cuesta $ " ++ x ++ " entonces dos quilos cuestan " ++ ... ‘ {}.
+¿Cu´al es el tipo de ‘foo ‘?
+{~ ‘ Papa -> Papa -> Papa ‘ ~ ‘ $ -> $ ‘ ~ $ -> $ = String -> String }
+//
+ 
