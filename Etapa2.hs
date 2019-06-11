@@ -57,7 +57,14 @@ leeMXE m e (x:y:xs)
 --- a la gramatica de GIFT*.
 
 readFV :: String -> Maybe (Bool, String)
-readFV str = undefined
+readFV xs = case leerMX (\z -> z == '}') xs of
+                Nothing -> Nothing
+                (principio, marca, resto) -> | principio `elem` wTrue = Just (True, resto)
+                                             | principio `elem` wFalse = Just (False, resto)
+                                             | otherwise = Nothing   
+
+
+
   where wTrue  = [ "VERDADERO", "VERDAD", "V", "TRUE", "T" ]
         wFalse = [ "FALSO", "FALSE", "F" ]
 
@@ -85,8 +92,8 @@ str2qas xs = do (qs, zs) <- getSeq str2qa xs
 str2qa :: String -> Maybe (QA, String)
 str2qa [    ]    = Nothing
 str2qa (x:xs)
-      | x == '{'     = undefined
-      | otherwise    = undefined
+      | x == '{'     = str2a xs
+      | otherwise    = str2q (x:xs)
 
 ---- str2q procesa una Pregunta.
 
@@ -103,7 +110,7 @@ getFragmento ( x :xs)
     | x `elem` ['{', '}', '=', '~'] =  Nothing
     | x == '$'                      = str2Math    xs
     | x == '`'                      = str2Code    xs
-    | otherwise                     = undefined
+    | otherwise                     = str2Txt	(x:xs) ---EL OTHERWISE ES SIEMPRE EL TXT?
 
 --- Los MATH contienen cualquier caracter con escape que no sea $
 str2Math :: String -> Maybe ( Fragmento , String )
@@ -113,12 +120,14 @@ str2Math str = do (math, _ , zs) <- leeMXE marca escape str
 
 --- Los CODE contienen cualquier caracter con escape que no sea `
 str2Code :: String -> Maybe ( Fragmento , String )
-str2Code str = undefined
+str2Code str = do (code, _ , zs) <- leeMXE marca escape str ---ANALOGO AL DE ARRIBA?
+                  return ( CODE code , zs )
          where marca x = x == '`'
 
 --- Los TXT en Q contienen cualquier caracter con escape que no sea ` $ {
 str2Txt :: String -> Maybe ( Fragmento , String )
-str2Txt str = undefined
+str2Txt str = do (txt, _ , zs) <- leeMXE marca escape str  ---ANALOGO AL DE ARRIBA?
+	 	 return ( TXT txt , zs )
         where marca x = x `elem` ['`','$','{','}','~','=']
 
 
