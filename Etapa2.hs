@@ -1,6 +1,7 @@
 module Etapa2 where
 
 import Data.Char (isSpace)
+import Debug.Trace (trace)
 import Tipos
 import Etapa1
 
@@ -94,6 +95,7 @@ str2qa (x:xs)
                         return (A respuesta, resto)
       | otherwise    = do
                         (pregunta, resto) <- str2q (x:xs)
+                        output <- trace ("pregnta = " ++ show pregunta) (return pregunta)
                         return (Q pregunta, resto)
 
 ---- str2q procesa una Pregunta.
@@ -138,11 +140,18 @@ str2a :: String -> Maybe ( Respuesta , String )
 str2a    ""  = Nothing
 str2a xxs@(x:xs)
   | isSpace x      = str2a xs
-  | x == '='       = undefined
-  | x == '~'       = undefined 
-  | x == '}'       = undefined
+  | x == '='       = do 
+                        (op, zs) <- getSeq getFragmento xs
+                        return (MO [OK op], zs)
+  | x == '~'       = do 
+                        (op, zs) <- getSeq getFragmento xs
+                        case str2a zs of
+                          Just (MO opciones, _) -> Just (MO (NOK op : opciones), zs)
+                          otherwise -> Nothing
+
+  | x == '}'       = Just (ESSAY, xs)
   | otherwise      = do (b, ys)     <- readFV xxs
-                        undefined
+                        return (FV b, ys)
 
 leerOpcion :: String -> Maybe ( Opcion , String )
 leerOpcion ('}':xs) = Nothing
