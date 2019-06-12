@@ -12,22 +12,22 @@ import Etapa1
 leeMOE :: (a -> Bool) -> (a -> Bool) -> [a] -> Maybe ([a], Maybe a, [a])
 leeMOE m e [] = Just ([], Nothing, [])
 leeMOE m e [x]
-   | e x       = Nothing
-   | m x       = Just ([ ],  Just x, [])
-   | otherwise = Just ([x], Nothing, [])
+  | e x       = Nothing
+  | m x       = Just ([ ],  Just x, [])
+  | otherwise = Just ([x], Nothing, [])
 leeMOE m e (x:y:xs) 
   | m x = if e $ last (y:xs) then Nothing
-          else Just ([], Just x, [y:xs])
+          else Just ([], Just x, y:xs)
   | e x && m y = do
                     (principio, marca, resto) <- leeMOE m e xs
                     case marca of
-                    Nothing -> return (Just ([x:y:principio], Nothing, []))  
-                    Just z -> return (Just ([x:y:principio], marca, resto))
+                      Nothing -> Just (x:y:principio, Nothing, []) 
+                      Just z -> Just (x:y:principio, marca, resto)
   | otherwise = do
                   (principio, marca, resto) <- leeMOE m e (y:xs)
                   case marca of
-                  Nothing -> return (Just ([x:principio], Nothing, []))
-                  Just z -> return (Just ([x:principio], marca, resto)) 
+                    Nothing -> Just (x:principio, Nothing, [])
+                    Just z -> Just (x:principio, marca, resto)
 
 --- El programa leeMXE lee una lista hasta encontrar una marca que no
 --- esté protegida por un ESCAPE. Si no encuentra
@@ -43,13 +43,13 @@ leeMXE m e [x]
 leeMXE m e (x:y:xs) 
   | m x = 
             if e $ last (y:xs) then Nothing
-            else Just ([], x, [y:xs])
+            else Just ([], x, y:xs)
   | e x && m y = do
                     (principio, marca, resto) <- leeMXE m e xs
-                    return (Just ([x:y:principio], marca, resto))
+                    return (x:y:principio, marca, resto)
   | otherwise = do
                   (principio, marca, resto) <- leeMXE m e (y:xs)
-                  return (Just ([x:principio], marca, resto)) 
+                  return (x:principio, marca, resto) 
 
 
 --- El programa readFV recibe un String, y consume del mismo
@@ -57,14 +57,11 @@ leeMXE m e (x:y:xs)
 --- a la gramatica de GIFT*.
 
 readFV :: String -> Maybe (Bool, String)
-readFV xs = case leerMX (\z -> z == '}') xs of
-                Nothing -> Nothing
-                (principio, marca, resto) -> | principio `elem` wTrue = Just (True, resto)
-                                             | principio `elem` wFalse = Just (False, resto)
-                                             | otherwise = Nothing   
-
-
-
+readFV xs = do
+              (principio, marca, resto) <- leeMX (\z -> z == '}') xs 
+              if principio `elem` wTrue then Just (True, resto)
+              else if principio `elem` wFalse then Just (False, resto)
+              else Nothing   
   where wTrue  = [ "VERDADERO", "VERDAD", "V", "TRUE", "T" ]
         wFalse = [ "FALSO", "FALSE", "F" ]
 
@@ -92,8 +89,12 @@ str2qas xs = do (qs, zs) <- getSeq str2qa xs
 str2qa :: String -> Maybe (QA, String)
 str2qa [    ]    = Nothing
 str2qa (x:xs)
-      | x == '{'     = str2a xs
-      | otherwise    = str2q (x:xs)
+      | x == '{'     = do
+                        (respuesta, resto) <- str2a xs
+                        return (A respuesta, resto)
+      | otherwise    = do
+                        (pregunta, resto) <- str2q (x:xs)
+                        return (Q pregunta, resto)
 
 ---- str2q procesa una Pregunta.
 
@@ -105,12 +106,12 @@ str2q = getSeq getFragmento
 ---- Los mismos son: {, }, =, ~
 
 getFragmento :: String -> Maybe (Fragmento, String)
-getFragmento      ""  = Nothing
+getFragmento "" = Nothing
 getFragmento ( x :xs)
-    | x `elem` ['{', '}', '=', '~'] =  Nothing
-    | x == '$'                      = str2Math    xs
-    | x == '`'                      = str2Code    xs
-    | otherwise                     = str2Txt	(x:xs) ---EL OTHERWISE ES SIEMPRE EL TXT?
+    | x `elem` ['{', '}', '=', '~'] = Nothing
+    | x == '$' = str2Math    xs
+    | x == '`' = str2Code    xs
+    | otherwise = str2Txt (x:xs) 
 
 --- Los MATH contienen cualquier caracter con escape que no sea $
 str2Math :: String -> Maybe ( Fragmento , String )
@@ -127,7 +128,7 @@ str2Code str = do (code, _ , zs) <- leeMXE marca escape str ---ANALOGO AL DE ARR
 --- Los TXT en Q contienen cualquier caracter con escape que no sea ` $ {
 str2Txt :: String -> Maybe ( Fragmento , String )
 str2Txt str = do (txt, _ , zs) <- leeMXE marca escape str  ---ANALOGO AL DE ARRIBA?
-	 	 return ( TXT txt , zs )
+                 return ( TXT txt , zs )
         where marca x = x `elem` ['`','$','{','}','~','=']
 
 
@@ -145,9 +146,12 @@ str2a xxs@(x:xs)
 
 leerOpcion :: String -> Maybe ( Opcion , String )
 leerOpcion ('}':xs) = Nothing
-leerOpcion ('=':xs) = undefined
-leerOpcion ('~':xs) = do (op, zs) <- getSeq getFragmento xs
-                         return (NOK op , zs)
+leerOpcion ('=':xs) = do 
+                        (op, zs) <- getSeq getFragmento xs
+                        return (OK op , zs)
+leerOpcion ('~':xs) = do 
+                        (op, zs) <- getSeq getFragmento xs
+                        return (NOK op , zs)
 
 --- Un QA puede abarcar varias líneas. Termina en un comentario.
 --- Se devuelve una única línea.
