@@ -90,11 +90,13 @@ str2qas xs = do (qs, zs) <- getSeq str2qa xs
 str2qa :: String -> Maybe (QA, String)
 str2qa [    ]    = Nothing
 str2qa (x:xs)
+      | isSpace x = str2qa xs
       | x == '{'     = do
                         (respuesta, resto) <- str2a xs
                         return (A respuesta, resto)
       | otherwise    = do
                         (pregunta, resto) <- str2q (x:xs)
+                        output <- trace ("paso pregunta= " ++ show pregunta) (return pregunta)
                         return (Q pregunta, resto)
 
 ---- str2q procesa una Pregunta.
@@ -169,7 +171,6 @@ leerOpcion ('~':xs) = do
 instance CCuerpo QA where
    getCuerpo xs = do  
                      (ys, zs) <- getCuerpo xs
-                     output <- trace ("cuerpo= " ++ head zs) (return zs) 
                      qas <- str2qas (ys::Cuerpo Char)
                      return (qas, zs)
 
