@@ -95,7 +95,6 @@ str2qa (x:xs)
                         return (A respuesta, resto)
       | otherwise    = do
                         (pregunta, resto) <- str2q (x:xs)
-                        output <- trace ("pregnta = " ++ show pregunta) (return pregunta)
                         return (Q pregunta, resto)
 
 ---- str2q procesa una Pregunta.
@@ -142,7 +141,9 @@ str2a xxs@(x:xs)
   | isSpace x      = str2a xs
   | x == '='       = do 
                         (op, zs) <- getSeq getFragmento xs
-                        return (MO [OK op], zs)
+                        case str2a zs of
+                          Just (MO opciones, _) -> Just (MO (OK op : opciones), zs)
+                          otherwise -> Nothing
   | x == '~'       = do 
                         (op, zs) <- getSeq getFragmento xs
                         case str2a zs of
@@ -166,7 +167,9 @@ leerOpcion ('~':xs) = do
 --- Se devuelve una única línea.
 
 instance CCuerpo QA where
-   getCuerpo xs = do (ys, zs) <- getCuerpo xs
+   getCuerpo xs = do  
+                     (ys, zs) <- getCuerpo xs
+                     output <- trace ("cuerpo= " ++ head zs) (return zs) 
                      qas <- str2qas (ys::Cuerpo Char)
                      return (qas, zs)
 
