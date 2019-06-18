@@ -42,7 +42,6 @@ getEjercicio xs =
      (nm ,ws)  <- getNombre ys
      (qas, zs) <- getCuerpo ws
      (c2 , tl) <- getComs   zs
-     output <- trace ("resto impreso = " ++ head tl) (return tl)
      return (Ejercicio c1 nm qas c2, skipNLs tl)
 
 
@@ -52,7 +51,7 @@ getEjercicio xs =
 
 getEjercicios :: (CCuerpo a) => [ String ] -> Maybe ([Ejercicio a], [ String ])
 getEjercicios    []  = Just ([], [])
-getEjercicios xss = do
+getEjercicios xss = do	
 			(ejercicio, resto) <- getEjercicio xss
 			(ejercicioS, restoFinal) <- getEjercicios resto
 			return (ejercicio:ejercicioS, restoFinal)
@@ -89,11 +88,9 @@ procesarLinea (x:xs)
 
 
 getComs :: [ String ] -> Maybe (Comentario, [ String ])
-getComs xs = do 
-		(coms, marca, resto) <- leeMX (\z -> take 2 z == "::" || take 1 z == " ") $ skipNLs xs
-		return (COM ( (barrasPorEspacios.quitarBarrasComienzo) coms ), marca:(resto) )
-		
-		
+getComs xs = case leeMO (\z -> take 2 z == "::" || z == [] ) $ skipNLs xs of
+		(coms, Nothing, []) -> Just (COM ( (barrasPorEspacios.quitarBarrasComienzo) coms ),[ ])
+		(coms, Just x, resto) -> Just (COM ( (barrasPorEspacios.quitarBarrasComienzo) coms ), x:(resto))
 
 --- Un nombre está parentizado por "::".
 --- Debe empezar y terminar en una unica linea, y estar al comienzo.
